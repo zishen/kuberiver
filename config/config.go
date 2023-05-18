@@ -11,6 +11,6 @@ const (
 
 var SkipUrlRulers = []string{
 	"www.apache.org", // license used
-	"#L",             // quote code line
+	//"#L",             // quote code line
 	"/issues/",
 }

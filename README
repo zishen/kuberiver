@@ -1,3 +1,15 @@
-提供云原生的工具与平台支持
-同步karmada的left文件
-V0.1:同步到k8s 1.27
+Aims:
+  support tools for cloud native.
+Short-range planning:
+  V0.1:left from k8s 1.27 on karmada.
+Rules:
+  1.left file has mention the URL.
+  2."#Lxxx" has include,but no ony line code any more, but whole file.
+  3. Any one which has two or more diff url, only get first one, but will point in logs.
+  4.The file code is linux code:UTF-8.
+Use:
+  config the file:config/config.go and log/init.go by your need.
+  then runn it.
+Support os:
+  windows,linux
+

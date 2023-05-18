@@ -20,6 +20,11 @@ func skipUrlRuler(url string) bool {
 	return false
 }
 
+func simplifyURL(inUrl string) string {
+	splitUrl := strings.Split(inUrl, "#L")
+	return splitUrl[0]
+}
+
 func getFileUrl(f *os.File) ([]string, error) {
 	// only read one appear(https://) file
 	buffer := make([]byte, 1024*1024)
@@ -38,6 +43,7 @@ func getFileUrl(f *os.File) ([]string, error) {
 		if skipUrlRuler(url) {
 			continue
 		}
+		url = simplifyURL(url)
 		if strings.Contains(url, "https") {
 			data = append(data, url)
 		}
@@ -130,7 +136,8 @@ func getNewUrl(url string, newVersion string) (string, bool) {
 // https://github.com/kubernetes/kubernetes/blob/release-1.25/cmd/genutils/genutils.go
 func GetNewContentFromUrl(urls []string, newVersion string) ([]byte, error, bool) {
 	if len(urls) != 1 {
-		return nil, fmt.Errorf("too many url:%v", urls), false
+		hwlog.RunLog.Infof("many url:%v\n", urls)
+		hwlog.RunLog.Infof("too many url(%v),choose first one", len(urls))
 	}
 
 	newUrl, changeFlag := getNewUrl(urls[0], newVersion)
