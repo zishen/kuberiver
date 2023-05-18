@@ -74,6 +74,7 @@ func creatNewDataFile(fName string, data []byte, changeFlag bool) error {
 
 func SetNewFilesByURLs(prefix, newPath string, fileUrls map[string][]string) error {
 	for oldName, urls := range fileUrls {
+		hwlog.RunLog.Debugf("begin SetNewFilesByURLs:%v", oldName)
 		if len(urls) == 0 {
 			hwlog.RunLog.Errorf("SetNewFilesByURLs %v url is null", oldName)
 			continue
@@ -89,6 +90,7 @@ func SetNewFilesByURLs(prefix, newPath string, fileUrls map[string][]string) err
 			hwlog.RunLog.Errorf("creatNewDataFile:%v", createErr)
 			continue
 		}
+		hwlog.RunLog.Debugf("end SetNewFilesByURLs:%v", oldName)
 	}
 	return nil
 }

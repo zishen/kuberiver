@@ -97,8 +97,7 @@ func GetUrlsInFiles(fNames []string) (map[string][]string, error) {
 
 // https://github.com/kubernetes/kubernetes/blob/release-1.26/pkg/scheduler/framework/types.go
 // https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.26/pkg/scheduler/framework/types.go
-func getNewUrl(urls []string, newVersion string) (string, bool) {
-	url := urls[0]
+func getNewUrl(url string, newVersion string) (string, bool) {
 	newUrl := url
 	hwlog.RunLog.Debugf("old url [%v]", newUrl)
 	if strings.Contains(url, "github.com") {
@@ -112,12 +111,12 @@ func getNewUrl(urls []string, newVersion string) (string, bool) {
 				spUrls[i] = "release-" + newVersion
 				continue
 			}
-			// maybe is master branch.
+		}
+		for i, sp := range spUrls {
 			if strings.Contains(sp, "blob") {
 				spUrls = append(spUrls[:i], spUrls[i+1:]...) // delete
 				continue
 			}
-
 		}
 		newUrl = strings.Join(spUrls, "/")
 		hwlog.RunLog.Debugf("new url [%v]", newUrl)
@@ -134,7 +133,7 @@ func GetNewContentFromUrl(urls []string, newVersion string) ([]byte, error, bool
 		return nil, fmt.Errorf("too many url:%v", urls), false
 	}
 
-	newUrl, changeFlag := getNewUrl(urls, newVersion)
+	newUrl, changeFlag := getNewUrl(urls[0], newVersion)
 
 	data, err := net.GetURLContent(newUrl)
 	return data, err, changeFlag
