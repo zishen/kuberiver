@@ -1,9 +1,11 @@
 package config
 
 const (
-	LiftedPath    = "C:\\01-workspace\\karmada\\pkg\\util\\lifted"
-	TmpPath       = "C:\\haha"
-	K8sSynVersion = "1.26"
+	LiftedPath      = "C:\\01-workspace\\karmada\\pkg\\util\\lifted"
+	TmpPath         = "C:\\01-workspace\\haha"
+	K8sSynVersion   = "1.27.2"
+	GitHubPreRawURL = "raw.githubusercontent.com"
+	LogFile         = "C:\\01-workspace\\haha.log"
 )
 
 var SkipUrlRulers = []string{

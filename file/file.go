@@ -1,10 +1,10 @@
 package file
 
 import (
-	"fmt"
 	"github.com/zishen/kuberiver/config"
+	hwlog "github.com/zishen/kuberiver/log"
 	"github.com/zishen/kuberiver/url"
-	"log"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,7 +20,8 @@ func GetAllFilesPath(oldPath string) ([]string, error) {
 	var files []string
 	walkErr := filepath.Walk(oldPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log.Fatalf("walking bootstrap dirs failed: %v: %v", path, err)
+			hwlog.RunLog.Errorf("walking bootstrap dirs failed: %v: %v", path, err)
+			return err
 		}
 		// skip dir file
 		if info.IsDir() {
@@ -43,22 +44,50 @@ func GetAllFilesPath(oldPath string) ([]string, error) {
 	return files, walkErr
 }
 
-func creatNewDataFile(fName string, data []byte) error {
-	fmt.Printf("creatNewDataFile:%v\n", fName)
-	return nil
+func creatNewDataFile(fName string, data []byte, changeFlag bool) error {
+	// get abs path.
+	path, pathErr := filepath.Abs(fName)
+	if pathErr != nil {
+		return pathErr
+	}
+	index := strings.LastIndex(path, string(os.PathSeparator))
+	dir := path[:index]
+	// create multilevel directories
+	dirErr := os.MkdirAll(dir, os.ModePerm)
+	if dirErr != nil {
+		return dirErr
+	}
+
+	newFileName := fName
+	if !changeFlag {
+		newFileName = strings.Replace(fName, ".go", ".html", 1)
+	}
+
+	out, err := os.Create(newFileName)
+	if err != nil {
+		return err
+	}
+	hwlog.RunLog.Debugf("creat new file:%v success.", newFileName)
+	defer out.Close()
+	return ioutil.WriteFile(newFileName, data, 0644)
 }
 
 func SetNewFilesByURLs(prefix, newPath string, fileUrls map[string][]string) error {
 	for oldName, urls := range fileUrls {
-		newName := strings.Replace(oldName, prefix, newPath, 1)
-
-		data, urlErr := url.GetNewContentFromUrl(urls, config.K8sSynVersion)
-		if urlErr != nil {
-			fmt.Printf("SetNewFilesByURLs:%v\n", urlErr)
+		if len(urls) == 0 {
+			hwlog.RunLog.Errorf("SetNewFilesByURLs %v url is null", oldName)
 			continue
 		}
-		if createErr := creatNewDataFile(newName, data); createErr != nil {
-			return urlErr
+		newName := strings.Replace(oldName, prefix, newPath, 1)
+
+		data, urlErr, changeFlag := url.GetNewContentFromUrl(urls, config.K8sSynVersion)
+		if urlErr != nil {
+			hwlog.RunLog.Errorf("GetNewContentFromUrl:%v", urlErr)
+			continue
+		}
+		if createErr := creatNewDataFile(newName, data, changeFlag); createErr != nil {
+			hwlog.RunLog.Errorf("creatNewDataFile:%v", createErr)
+			continue
 		}
 	}
 	return nil

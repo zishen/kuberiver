@@ -3,6 +3,8 @@ package url
 import (
 	"fmt"
 	"github.com/zishen/kuberiver/config"
+	hwlog "github.com/zishen/kuberiver/log"
+	"github.com/zishen/kuberiver/net"
 	"mvdan.cc/xurls/v2"
 	"os"
 	"strings"
@@ -27,7 +29,7 @@ func getFileUrl(f *os.File) ([]string, error) {
 	}
 	defer func() {
 		if fErr := f.Close(); fErr != nil {
-			fmt.Printf("getFileUrl Close:%v\n", err)
+			hwlog.RunLog.Errorf("getFileUrl Close:%v", err)
 		}
 	}()
 	urls := xurls.Relaxed().FindAllString(string(buffer), -1)
@@ -64,14 +66,14 @@ func GetUrlsInFiles(fNames []string) (map[string][]string, error) {
 	for _, fn := range fNames {
 		osFile, err := os.OpenFile(fn, os.O_RDONLY, 0644)
 		if err != nil {
-			fmt.Printf("GetUrlsInFiles:%v\n", err)
+			hwlog.RunLog.Errorf("OpenFile:%v", err)
 			return nil, err
 		}
 		wg.Add(1)
 		go func(name string) {
 			fUrl, fErr := getFileUrl(osFile)
 			if fErr != nil {
-				fmt.Printf("GetUrlsInFiles:%v\n", err)
+				hwlog.RunLog.Errorf("getFileUrl:%v", err)
 				errs = append(errs, fErr)
 				return
 			}
@@ -93,25 +95,47 @@ func GetUrlsInFiles(fNames []string) (map[string][]string, error) {
 	return fileUrls, nil
 }
 
-// https://github.com/kubernetes/kubernetes/blob/release-1.25/cmd/genutils/genutils.go
-func GetNewContentFromUrl(urls []string, newVersion string) ([]byte, error) {
-	if len(urls) != 1 {
-		return nil, fmt.Errorf("too many url:%v", urls)
-	}
-
+// https://github.com/kubernetes/kubernetes/blob/release-1.26/pkg/scheduler/framework/types.go
+// https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.26/pkg/scheduler/framework/types.go
+func getNewUrl(urls []string, newVersion string) (string, bool) {
 	url := urls[0]
-	var newUrl string
-	if strings.Contains(url, "kubernetes") {
+	newUrl := url
+	hwlog.RunLog.Debugf("old url [%v]", newUrl)
+	if strings.Contains(url, "github.com") {
 		spUrls := strings.Split(url, "/")
 		for i, sp := range spUrls {
-			if strings.Contains(sp, "release-") {
-				spUrls[i] = "release-" + config.K8sSynVersion
-				break
+			if strings.Contains(sp, "github.com") {
+				spUrls[i] = config.GitHubPreRawURL
+				continue
 			}
+			if strings.Contains(sp, "release-") {
+				spUrls[i] = "release-" + newVersion
+				continue
+			}
+			// maybe is master branch.
+			if strings.Contains(sp, "blob") {
+				spUrls = append(spUrls[:i], spUrls[i+1:]...) // delete
+				continue
+			}
+
 		}
 		newUrl = strings.Join(spUrls, "/")
-		fmt.Printf("old==%v\n new==%v\n", url, newUrl)
+		hwlog.RunLog.Debugf("new url [%v]", newUrl)
+	} else {
+		hwlog.RunLog.Infof("no change url [%v]", newUrl)
+		return newUrl, false
+	}
+	return newUrl, true
+}
+
+// https://github.com/kubernetes/kubernetes/blob/release-1.25/cmd/genutils/genutils.go
+func GetNewContentFromUrl(urls []string, newVersion string) ([]byte, error, bool) {
+	if len(urls) != 1 {
+		return nil, fmt.Errorf("too many url:%v", urls), false
 	}
 
-	return nil, nil
+	newUrl, changeFlag := getNewUrl(urls, newVersion)
+
+	data, err := net.GetURLContent(newUrl)
+	return data, err, changeFlag
 }
