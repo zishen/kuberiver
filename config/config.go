@@ -1,10 +1,10 @@
 package config
 
 const (
-	LiftedPath = "C:\\01-workspace\\karmada\\pkg\\util\\lifted"
+	LiftedPath = "C:\\06-temp\\karmada\\pkg\\util\\lifted"
 	TmpPath    = "C:\\01-workspace\\haha"
 	// K8sSynVersion must be branch release version.
-	K8sSynVersion   = "1.27"
+	K8sSynVersion   = "1.26"
 	GitHubPreRawURL = "raw.githubusercontent.com"
 	LogFile         = "C:\\01-workspace\\haha.log"
 )

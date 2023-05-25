@@ -133,15 +133,27 @@ func getNewUrl(url string, newVersion string) (string, bool) {
 	return newUrl, true
 }
 
+func getAllUrls(urls []string, newVersion string) map[string]bool {
+	value := make(map[string]bool, 3)
+	for _, url := range urls {
+		newUrl, changeFlag := getNewUrl(url, newVersion)
+		value[newUrl] = changeFlag
+	}
+	return value
+}
+
+// GetNewContentFromUrl if has above two url, bundle into a file.
 // https://github.com/kubernetes/kubernetes/blob/release-1.25/cmd/genutils/genutils.go
 func GetNewContentFromUrl(urls []string, newVersion string) ([]byte, error, bool) {
-	if len(urls) != 1 {
-		hwlog.RunLog.Infof("many url:%v\n", urls)
-		hwlog.RunLog.Infof("too many url(%v),choose first one", len(urls))
+	var changeFlag bool
+	var news []string
+	newURLs := getAllUrls(urls, newVersion)
+	for url, flag := range newURLs {
+		if flag {
+			changeFlag = true
+		}
+		news = append(news, url)
 	}
-
-	newUrl, changeFlag := getNewUrl(urls[0], newVersion)
-
-	data, err := net.GetURLContent(newUrl)
+	data, err := net.GetURLsContent(news)
 	return data, err, changeFlag
 }

@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
-func GetURLContent(newUrl string) ([]byte, error) {
+func getURLContent(newUrl string) ([]byte, error) {
 	resp, err := http.Get(newUrl)
 	if err != nil {
 		return nil, err
@@ -22,4 +24,19 @@ func GetURLContent(newUrl string) ([]byte, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+func GetURLsContent(newUrls []string) ([]byte, error) {
+	var value []byte
+	var parseErrs []error
+	for _, url := range newUrls {
+		if len(newUrls) > 1 {
+			value = append(value, []byte(url)...)
+			value = append(value, '\n')
+		}
+		data, err := getURLContent(url)
+		value = append(value, data...)
+		parseErrs = append(parseErrs, err)
+	}
+	return value, utilerrors.NewAggregate(parseErrs)
 }
