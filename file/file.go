@@ -34,10 +34,10 @@ func GetAllFilesPath(oldPath string) ([]string, error) {
 				return nil
 			}
 		}
-		// skip test file.
-		if strings.Contains(path, "_test.go") {
-			return nil
-		}
+		/*		// skip test file.
+				if strings.Contains(path, "_test.go") {
+					return nil
+				}*/
 		files = append(files, path)
 		return nil
 	})
